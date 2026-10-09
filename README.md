@@ -1,6 +1,6 @@
 # 🍽️ CocinaLista
 
-![Pantalla principal de CocinaLista](/Assets/CocinaLista.png)
+![Pantalla principal de CocinaLista](CocinaLista.jpg)
 **Planificador de menús, recetas y listas de compras**
 
 CocinaLista es una aplicación diseñada para simplificar la organización de las comidas diarias. Permite planificar menús, gestionar recetas y preparar listas de compras, ayudando a ahorrar tiempo, organizar las comidas del hogar y facilitar las compras de cada semana.
