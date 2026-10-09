@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#39B54A" />
+      <stop offset="50%" stop-color="#28A745" />
+      <stop offset="100%" stop-color="#20C9B0" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF7" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD447" />
+      <stop offset="100%" stop-color="#FFAA00" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#145A25" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Squircle rounded background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Subtle inner ambient highlight -->
+  <rect width="512" height="512" rx="112" fill="url(#glowGrad)" />
+
+  <!-- Main emblem group with shadow -->
+  <g filter="url(#shadow)">
+    <!-- Plate base / rim -->
+    <ellipse cx="256" cy="350" rx="150" ry="22" fill="#FFFFFF" opacity="0.3" />
+
+    <!-- Ceramic Chef Bowl -->
+    <path d="M 120 250 C 120 355, 392 355, 392 250 Z" fill="#FFFFFF" />
+
+    <!-- Bowl rim top highlight -->
+    <ellipse cx="256" cy="250" rx="136" ry="18" fill="#F4FBF5" />
+    <ellipse cx="256" cy="252" rx="124" ry="12" fill="#39B54A" opacity="0.15" />
+
+    <!-- Healthy fresh leaf sprout on top -->
+    <!-- Left Leaf -->
+    <path d="M 256 225 C 210 200, 190 140, 240 120 C 265 155, 260 205, 256 225 Z" fill="#39B54A" />
+    <!-- Leaf vein -->
+    <path d="M 256 225 Q 235 170, 240 120" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6" />
+
+    <!-- Right Leaf with gold accent -->
+    <path d="M 256 225 C 295 190, 335 150, 310 110 C 275 135, 265 190, 256 225 Z" fill="#20C9B0" />
+    <path d="M 256 225 Q 285 160, 310 110" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6" />
+
+    <!-- Central culinary gold star accent -->
+    <path d="M 256 90 L 263 104 L 278 106 L 267 117 L 270 132 L 256 124 L 242 132 L 245 117 L 234 106 L 249 104 Z" fill="url(#goldGrad)" />
+
+    <!-- Chef fork on left side -->
+    <g transform="translate(175, 175) rotate(-22)">
+      <path d="M 0 0 L 0 50 M -8 0 L -8 30 Q -8 40, 0 45 M 8 0 L 8 30 Q 8 40, 0 45 M 0 45 L 0 85" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.9" />
+    </g>
+
+    <!-- Chef spoon on right side -->
+    <g transform="translate(337, 175) rotate(22)">
+      <ellipse cx="0" cy="20" rx="9" ry="18" fill="#FFFFFF" opacity="0.9" />
+      <path d="M 0 38 L 0 85" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.9" />
+    </g>
+  </g>
+
+  <!-- Sparkles -->
+  <circle cx="130" cy="140" r="6" fill="#FFD447" opacity="0.8" />
+  <circle cx="395" cy="155" r="5" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="370" cy="370" r="7" fill="#FFD447" opacity="0.75" />
+</svg>

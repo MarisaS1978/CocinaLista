@@ -1,0 +1,8 @@
+{
+  "name": "Cocina Lista - Planificador de Comidas y Lista de Compras",
+  "description": "Planificá tus comidas semanales y generá automáticamente tu lista de compras inteligente comparando con tu despensa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
