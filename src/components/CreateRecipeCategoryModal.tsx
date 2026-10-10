@@ -142,7 +142,7 @@ export const CreateRecipeCategoryModal: React.FC<CreateRecipeCategoryModalProps>
                 <span className="text-[10px] font-bold text-[#263238]/60 uppercase tracking-wider block mb-1.5">
                   Elegí rápido:
                 </span>
-                <div className="grid grid-cols-10 gap-1">
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1">
                   {POPULAR_RECIPE_ICONS.map(ico => (
                     <button
                       key={ico}

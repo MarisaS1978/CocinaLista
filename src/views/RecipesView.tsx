@@ -191,53 +191,54 @@ export const RecipesView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
           {/* Filter for pantry readiness */}
           <button
             onClick={() => setFilterOnlyReady(!filterOnlyReady)}
-            className={`flex-1 sm:flex-initial px-3.5 py-2.5 rounded-2xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
               filterOnlyReady
                 ? 'bg-[#39B54A] text-white border-[#39B54A] shadow-xs'
                 : 'bg-[#FFFDF7] text-[#263238] border-[#263238]/15 hover:border-[#39B54A]'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-[#FFD447]" />
-            <span>Solo con despensa</span>
+            <Sparkles className="w-4 h-4 text-[#FFD447] shrink-0" />
+            <span className="truncate">Solo con despensa</span>
           </button>
 
           {/* Import recipe button */}
           <button
             onClick={() => setIsImportRecipeModalOpen(true)}
             title="Importar receta desde PDF o enlace web"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#4D96FF]/40 text-[#2563EB] hover:bg-[#4D96FF]/10 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#4D96FF]/40 text-[#2563EB] hover:bg-[#4D96FF]/10 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
           >
-            <FileUp className="w-4 h-4 text-[#4D96FF]" />
-            <span>Importar</span>
+            <FileUp className="w-4 h-4 text-[#4D96FF] shrink-0" />
+            <span className="truncate">Importar</span>
           </button>
 
           {/* New category button */}
           <button
             onClick={() => setIsCreateRecipeCategoryModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
             title="Crear una nueva categoría para organizar recetas"
           >
-            <FolderPlus className="w-4 h-4 text-[#39B54A]" />
-            <span>Nueva categoría</span>
+            <FolderPlus className="w-4 h-4 text-[#39B54A] shrink-0" />
+            <span className="truncate">Nueva categoría</span>
           </button>
 
           {/* New recipe button */}
           <button
             onClick={() => setIsAddRecipeModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
           >
-            <span>Nueva receta</span>
+            <Plus className="w-4 h-4 shrink-0 sm:hidden" />
+            <span className="truncate">Nueva receta</span>
           </button>
         </div>
       </div>
 
       {/* Search and Category Filter Bar */}
       <div className="space-y-2">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 text-xs">
             {categories.map(cat => {
               let count = 0;

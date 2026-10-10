@@ -70,7 +70,7 @@ export const HomeView: React.FC = () => {
             <button
               onClick={resetToDemoData}
               title="Restablecer datos de demostración"
-              className="p-2.5 rounded-2xl border border-[#263238]/15 bg-white hover:bg-slate-50 text-[#263238]/60 hover:text-[#263238] transition-colors cursor-pointer"
+              className="p-2.5 rounded-2xl border border-[#263238]/15 bg-white hover:bg-slate-50 text-[#263238]/60 hover:text-[#263238] transition-colors cursor-pointer shrink-0"
             >
               <RotateCcw className="w-4 h-4" />
             </button>

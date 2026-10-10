@@ -117,50 +117,51 @@ export const ShoppingListView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
           {shoppingList.length > 0 ? (
             <button
               onClick={() => setShowClearAllModal(true)}
               title="Vaciar completamente la lista de compras"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#FF5C5C]/40 text-[#FF5C5C] hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#FF5C5C]/40 text-[#FF5C5C] hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Limpiar lista</span>
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Limpiar lista</span>
             </button>
           ) : (
             <button
               disabled
               title="La lista de compras ya está vacía"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-[#263238]/10 text-[#263238]/40 text-xs font-bold cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 border border-[#263238]/10 text-[#263238]/40 text-xs font-bold cursor-not-allowed"
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Limpiar lista</span>
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Limpiar lista</span>
             </button>
           )}
 
           <button
             onClick={() => setIsCreatePantryCategoryModalOpen(true)}
             title="Crear una nueva categoría para organizar la lista"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
           >
-            <FolderPlus className="w-4 h-4 text-[#39B54A]" />
-            <span>Nueva categoría</span>
+            <FolderPlus className="w-4 h-4 text-[#39B54A] shrink-0" />
+            <span className="truncate">Nueva categoría</span>
           </button>
 
           <button
             onClick={handleCopyList}
             title="Copiar lista de compras para WhatsApp o notas"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/15 text-[#263238] text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/15 text-[#263238] text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
           >
-            <Copy className="w-4 h-4 text-[#4D96FF]" />
-            <span>Copiar lista</span>
+            <Copy className="w-4 h-4 text-[#4D96FF] shrink-0" />
+            <span className="truncate">Copiar lista</span>
           </button>
 
           <button
             onClick={() => setIsAddShoppingModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
           >
-            <span>Agregar producto</span>
+            <Plus className="w-4 h-4 shrink-0 sm:hidden" />
+            <span className="truncate">Agregar producto</span>
           </button>
         </div>
       </div>

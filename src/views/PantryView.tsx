@@ -81,49 +81,50 @@ export const PantryView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
           {pantry.length > 0 ? (
             <button
               onClick={() => setShowClearPantryModal(true)}
               title="Borrar todos los productos de la despensa"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#FF5C5C]/40 text-[#FF5C5C] hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#FF5C5C]/40 text-[#FF5C5C] hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Vaciar despensa</span>
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Vaciar despensa</span>
             </button>
           ) : (
             <button
               disabled
               title="La despensa ya está vacía"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-[#263238]/10 text-[#263238]/40 text-xs font-bold cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 border border-[#263238]/10 text-[#263238]/40 text-xs font-bold cursor-not-allowed"
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Vaciar despensa</span>
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Vaciar despensa</span>
             </button>
           )}
 
           <button
             onClick={() => setIsCookWithPantryModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFD447]/30 border border-[#FFD447] text-[#263238] text-xs font-bold hover:bg-[#FFD447]/50 transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFD447]/30 border border-[#FFD447] text-[#263238] text-xs font-bold hover:bg-[#FFD447]/50 transition-colors cursor-pointer shadow-2xs"
           >
-            <Sparkles className="w-4 h-4 text-[#FF8A3D]" />
-            <span>¿Qué puedo cocinar?</span>
+            <Sparkles className="w-4 h-4 text-[#FF8A3D] shrink-0" />
+            <span className="truncate">¿Qué cocinar?</span>
           </button>
 
           <button
             onClick={() => setIsCreatePantryCategoryModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/20 hover:border-[#39B54A] text-[#263238] text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-2xs"
             title="Crear una nueva categoría para organizar la despensa"
           >
-            <FolderPlus className="w-4 h-4 text-[#39B54A]" />
-            <span>Nueva categoría</span>
+            <FolderPlus className="w-4 h-4 text-[#39B54A] shrink-0" />
+            <span className="truncate">Nueva categoría</span>
           </button>
 
           <button
             onClick={() => setIsAddPantryModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
           >
-            <span>Agregar producto</span>
+            <Plus className="w-4 h-4 shrink-0 sm:hidden" />
+            <span className="truncate">Agregar producto</span>
           </button>
         </div>
       </div>
@@ -156,7 +157,7 @@ export const PantryView: React.FC = () => {
 
       {/* Filtros y búsqueda */}
       <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 text-xs">
             <button
               onClick={() => setSelectedCategory('Todas')}
@@ -349,15 +350,18 @@ export const PantryView: React.FC = () => {
                             type="button"
                             onClick={() => setEditingPantryItem(item)}
                             title="Editar o mover de categoría"
-                            className="p-1.5 text-[#263238]/50 hover:text-[#39B54A] hover:bg-[#39B54A]/10 rounded-lg transition-colors cursor-pointer"
+                            className="w-7 h-7 flex items-center justify-center text-[#263238]/50 hover:text-[#39B54A] hover:bg-[#39B54A]/10 rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
-                            onClick={() => setItemToDelete(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setItemToDelete(item);
+                            }}
                             title="Eliminar de despensa"
-                            className="p-1.5 text-[#263238]/30 hover:text-[#FF5C5C] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="w-7 h-7 flex items-center justify-center text-[#263238]/40 hover:text-[#FF5C5C] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -367,7 +371,7 @@ export const PantryView: React.FC = () => {
                       {/* Bottom action row: Quick category mover & quick stepper */}
                       <div className="pt-2 border-t border-[#263238]/6 flex items-center justify-between gap-2">
                         {/* Mover de categoría */}
-                        <div className="relative inline-flex items-center flex-1 min-w-0 max-w-[200px]">
+                        <div className="relative inline-flex items-center flex-1 min-w-0">
                           <div className="absolute left-2 pointer-events-none text-xs flex items-center">
                             <ArrowRightLeft className="w-3 h-3 text-[#39B54A]" />
                           </div>

@@ -46,6 +46,7 @@ interface AppContextType {
   setActiveTab: (tab: ActiveTab) => void;
   weeklyMenu: WeeklyMenu;
   setWeeklyMeal: (day: DayOfWeek, mealType: MealType, slot: MealSlot | null) => void;
+  clearWeeklyMenu: () => void;
   recipes: Recipe[];
   addRecipe: (recipe: Omit<Recipe, 'id'>) => void;
   updateRecipe: (id: string, updates: Partial<Recipe>) => void;
@@ -408,6 +409,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       },
     }));
     showToast(slot ? '✅ Menú actualizado' : 'Comida quitada del menú', 'success');
+  };
+
+  const clearWeeklyMenu = () => {
+    const emptyMenu: WeeklyMenu = {
+      lunes: { almuerzo: null, cena: null },
+      martes: { almuerzo: null, cena: null },
+      miercoles: { almuerzo: null, cena: null },
+      jueves: { almuerzo: null, cena: null },
+      viernes: { almuerzo: null, cena: null },
+      sabado: { almuerzo: null, cena: null },
+      domingo: { almuerzo: null, cena: null },
+    };
+    setWeeklyMenuState(emptyMenu);
+    showToast('🧹 Menú semanal limpiado por completo', 'info');
   };
 
   const addRecipe = (newRecipeData: Omit<Recipe, 'id'>) => {
@@ -910,6 +925,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setActiveTab,
         weeklyMenu,
         setWeeklyMeal,
+        clearWeeklyMenu,
         recipes,
         addRecipe,
         updateRecipe,
