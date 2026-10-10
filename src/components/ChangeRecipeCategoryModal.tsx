@@ -1,27 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { STANDARD_CATEGORIES } from '../services/recipeCategories';
-import { X, Tag, Check, Plus } from 'lucide-react';
+import { X, Tag, Check, Plus, Sparkles, Smile } from 'lucide-react';
+import { RecipeIconPicker } from './RecipeIconPicker';
 
 export const ChangeRecipeCategoryModal: React.FC = () => {
   const {
     recipeToChangeCategory,
     setRecipeToChangeCategory,
-    changeRecipeCategory,
+    updateRecipe,
     allRecipeCategories,
     addRecipeCategory,
   } = useApp();
 
+  const [selectedCategory, setSelectedCategory] = useState<string>('Clásicos');
+  const [selectedEmoji, setSelectedEmoji] = useState<string>('🍲');
   const [customCatInput, setCustomCatInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+
+  useEffect(() => {
+    if (recipeToChangeCategory) {
+      setSelectedCategory(recipeToChangeCategory.category || 'Clásicos');
+      setSelectedEmoji(recipeToChangeCategory.emoji || '🍲');
+      setShowCustomInput(false);
+      setCustomCatInput('');
+    }
+  }, [recipeToChangeCategory]);
 
   if (!recipeToChangeCategory) return null;
 
   const recipe = recipeToChangeCategory;
-  const currentCategory = recipe.category || 'Clásicos';
 
-  const handleSelect = (categoryName: string) => {
-    changeRecipeCategory(recipe.id, categoryName);
+  const handleSave = () => {
+    updateRecipe(recipe.id, {
+      category: selectedCategory,
+      emoji: selectedEmoji,
+    });
     setRecipeToChangeCategory(null);
   };
 
@@ -30,7 +43,9 @@ export const ChangeRecipeCategoryModal: React.FC = () => {
     if (!customCatInput.trim()) return;
     const trimmed = customCatInput.trim();
     addRecipeCategory(trimmed);
-    handleSelect(trimmed);
+    setSelectedCategory(trimmed);
+    setShowCustomInput(false);
+    setCustomCatInput('');
   };
 
   return (
@@ -39,15 +54,15 @@ export const ChangeRecipeCategoryModal: React.FC = () => {
         {/* Header */}
         <div className="p-6 pb-4 border-b border-[#263238]/8 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center">
-              <Tag className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-2xl shadow-xs">
+              {selectedEmoji}
             </div>
             <div>
               <span className="text-[11px] font-bold text-[#39B54A] uppercase tracking-wider">
-                Asignar opción de filtrado
+                Cambiar ícono y categoría
               </span>
               <h2 className="text-lg font-bold tracking-tight text-[#263238] mt-0.5">
-                {recipe.emoji} {recipe.name}
+                {recipe.name}
               </h2>
             </div>
           </div>
@@ -60,29 +75,48 @@ export const ChangeRecipeCategoryModal: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
-          <div className="p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/12 text-xs text-[#263238]/80 leading-relaxed">
-            Elegí bajo qué opción del filtrado querés que aparezca esta receta. Por ejemplo, al asignarla a <strong>Tartas</strong>, aparecerá junto con las tartas precargadas y tus recetas agregadas.
+        <div className="p-6 space-y-5">
+          {/* Section 1: Cambiar ícono */}
+          <div>
+            <label className="text-xs font-bold text-[#263238] block mb-1.5">
+              1. Asignar ícono o emoji a la receta
+            </label>
+            <RecipeIconPicker
+              value={selectedEmoji}
+              onChange={setSelectedEmoji}
+              recipeName={recipe.name}
+              category={selectedCategory}
+            />
           </div>
 
+          {/* Section 2: Cambiar categoría de filtrado */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-[#263238] block">
-              Opciones del filtrado disponibles:
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[#263238] block">
+                2. Asignar opción de filtrado
+              </label>
+              <span className="text-[11px] font-bold text-[#1e6328] bg-[#39B54A]/15 px-2.5 py-0.5 rounded-md border border-[#39B54A]/30">
+                Seleccionada: {selectedCategory}
+              </span>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <p className="text-[11px] text-[#263238]/70">
+              Elegí bajo qué opción querés que aparezca la receta al filtrar en el recetario:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               {allRecipeCategories.map(cat => {
                 const isSelected =
-                  currentCategory.toLowerCase().trim() === cat.name.toLowerCase().trim();
+                  selectedCategory.toLowerCase().trim() === cat.name.toLowerCase().trim();
 
                 return (
                   <button
                     key={cat.id || cat.name}
                     type="button"
-                    onClick={() => handleSelect(cat.name)}
+                    onClick={() => setSelectedCategory(cat.name)}
                     className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#39B54A] bg-[#39B54A]/12 ring-2 ring-[#39B54A]/20 shadow-xs'
+                        ? 'border-[#39B54A] bg-[#39B54A]/15 ring-2 ring-[#39B54A]/25 shadow-xs font-bold'
                         : 'border-[#263238]/12 bg-white hover:border-[#39B54A]/40 hover:bg-slate-50'
                     }`}
                   >
@@ -96,7 +130,7 @@ export const ChangeRecipeCategoryModal: React.FC = () => {
                         </span>
                         {isSelected && (
                           <span className="text-[10px] font-bold text-[#1e6328] bg-[#39B54A]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Actual
+                            <Check className="w-3 h-3" /> Elegida
                           </span>
                         )}
                         {cat.isCustom && (
@@ -160,13 +194,21 @@ export const ChangeRecipeCategoryModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-[#FFFDF7] border-t border-[#263238]/8 flex justify-end">
+        <div className="p-4 bg-[#FFFDF7] border-t border-[#263238]/8 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setRecipeToChangeCategory(null)}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-[#263238]/70 hover:bg-black/5 transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#263238]/70 hover:bg-black/5 transition-colors cursor-pointer"
           >
-            Cerrar
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-5 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <Check className="w-4 h-4" />
+            <span>Guardar cambios</span>
           </button>
         </div>
       </div>

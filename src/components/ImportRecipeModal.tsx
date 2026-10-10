@@ -20,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Recipe, ProductCategory } from '../types';
+import { RecipeIconPicker } from './RecipeIconPicker';
 
 export const ImportRecipeModal: React.FC = () => {
   const {
@@ -426,6 +427,14 @@ Preparación:
                   </select>
                 </div>
               </div>
+
+              {/* Selector de ícono de la receta importada */}
+              <RecipeIconPicker
+                value={draftRecipe.emoji || '🍲'}
+                onChange={em => setDraftRecipe({ ...draftRecipe, emoji: em })}
+                recipeName={draftRecipe.name}
+                category={draftRecipe.category}
+              />
 
               {/* Time, Servings & Difficulty */}
               <div className="grid grid-cols-3 gap-2.5">

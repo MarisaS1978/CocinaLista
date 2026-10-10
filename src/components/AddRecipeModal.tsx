@@ -7,6 +7,7 @@ import {
   suggestIconForRecipeCategory,
   POPULAR_RECIPE_ICONS,
 } from '../services/recipeCategories';
+import { RecipeIconPicker, suggestEmojiFromRecipeName } from './RecipeIconPicker';
 import { X, Plus, Trash2, Clock, Users, ChefHat, Sparkles, FileUp, FolderPlus } from 'lucide-react';
 
 export const AddRecipeModal: React.FC = () => {
@@ -23,6 +24,7 @@ export const AddRecipeModal: React.FC = () => {
 
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🍲');
+  const [hasManuallyChosenIcon, setHasManuallyChosenIcon] = useState(false);
   const [category, setCategory] = useState<string>('Tartas');
   const [diet, setDiet] = useState<'balanceado' | 'carne' | 'vegetariano'>('balanceado');
   const [timeMin, setTimeMin] = useState<number>(35);
@@ -48,6 +50,7 @@ export const AddRecipeModal: React.FC = () => {
       }
       setName('');
       setEmoji('🍲');
+      setHasManuallyChosenIcon(false);
       setAutoDetected(false);
     }
   }, [isAddRecipeModalOpen, newRecipeInitialCategory]);
@@ -71,10 +74,15 @@ export const AddRecipeModal: React.FC = () => {
     const detected = detectCategoryFromName(val);
     if (detected) {
       setCategory(detected.category);
-      if (!emoji || emoji === '🍲') {
+      if (!hasManuallyChosenIcon) {
         setEmoji(detected.emoji);
       }
       setAutoDetected(true);
+    } else if (!hasManuallyChosenIcon && val.trim().length >= 3) {
+      const suggested = suggestEmojiFromRecipeName(val);
+      if (suggested && suggested !== '🍲') {
+        setEmoji(suggested);
+      }
     }
   };
 
@@ -212,55 +220,30 @@ export const AddRecipeModal: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Nombre y Emoji */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-8">
-              <label className="text-xs font-bold text-[#263238] block mb-1.5">
-                Nombre de la receta *
-              </label>
-              <input
-                type="text"
-                required
-                autoFocus
-                placeholder="Ej: Tarta de jamón y queso, Ñoquis de papa..."
-                value={name}
-                onChange={e => handleNameChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#FFFDF7] border border-[#263238]/20 rounded-xl focus:ring-2 focus:ring-[#39B54A] focus:outline-none"
-              />
-            </div>
-
-            <div className="sm:col-span-4">
-              <label className="text-xs font-bold text-[#263238] block mb-1.5">
-                Ícono de la receta
-              </label>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  maxLength={4}
-                  value={emoji}
-                  onChange={e => setEmoji(e.target.value || '🍲')}
-                  className="w-10 h-9 text-center text-xl rounded-xl border border-[#263238]/20 bg-[#FFFDF7] focus:ring-2 focus:ring-[#39B54A] focus:outline-none shrink-0"
-                  title="Escribí o pegá cualquier emoji"
-                />
-                <div className="flex items-center gap-1 overflow-x-auto py-1">
-                  {quickEmojis.map(em => (
-                    <button
-                      key={em}
-                      type="button"
-                      onClick={() => setEmoji(em)}
-                      className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border shrink-0 cursor-pointer transition-transform ${
-                        emoji === em
-                          ? 'border-[#39B54A] bg-[#39B54A]/20 scale-105 font-bold'
-                          : 'border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Nombre de la receta */}
+          <div>
+            <label className="text-xs font-bold text-[#263238] block mb-1.5">
+              Nombre de la receta *
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              placeholder="Ej: Tarta de jamón y queso, Pollo al horno con papas, Ñoquis caseros..."
+              value={name}
+              onChange={e => handleNameChange(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#FFFDF7] border border-[#263238]/20 rounded-xl focus:ring-2 focus:ring-[#39B54A] focus:outline-none"
+            />
           </div>
+
+          {/* Selector e ilustrador de ícono para la receta */}
+          <RecipeIconPicker
+            value={emoji}
+            onChange={setEmoji}
+            recipeName={name}
+            category={category}
+            onManualSelect={() => setHasManuallyChosenIcon(true)}
+          />
 
           {/* Asignar Categoría de filtrado (Prominente y con iconos) */}
           <div className="p-3.5 rounded-2xl bg-[#FFFDF7] border border-[#263238]/15 space-y-2.5">

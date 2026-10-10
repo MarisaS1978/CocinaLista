@@ -80,7 +80,7 @@ const DEFAULT_THEME: ThemeStyle = {
 };
 
 export function getCulinaryIconForRecipe(name: string, currentEmoji?: string): string {
-  if (currentEmoji && currentEmoji !== '🍲') return currentEmoji;
+  if (currentEmoji) return currentEmoji;
   const n = (name || '').toLowerCase();
   if (n.includes('pollo')) return '🍗';
   if (n.includes('fideo') || n.includes('pasta') || n.includes('filetto') || n.includes('tallar') || n.includes('canelon') || n.includes('raviol')) return '🍝';

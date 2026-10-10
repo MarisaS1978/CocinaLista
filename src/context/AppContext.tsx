@@ -73,6 +73,7 @@ interface AppContextType {
   removeCustomShoppingItem: (id: string) => void;
   removeShoppingItem: (id: string) => void;
   clearBoughtItems: (moveToPantry: boolean) => void;
+  moveSingleShoppingItemToPantry: (id: string) => void;
   clearEntireShoppingList: () => void;
   restoreShoppingListFromMenu: () => void;
   hasDismissedShoppingItems: boolean;
@@ -826,6 +827,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCustomShoppingItems(prev => prev.filter(item => !boughtMap[item.id]));
   };
 
+  const moveSingleShoppingItemToPantry = (id: string) => {
+    const item = shoppingList.find(i => i.id === id);
+    if (!item) return;
+
+    const newPantryItems = [...pantry];
+    const normKey = normalizeIngredientName(item.name);
+    const existingIdx = newPantryItems.findIndex(
+      p => normalizeIngredientName(p.name) === normKey
+    );
+    if (existingIdx >= 0) {
+      newPantryItems[existingIdx] = {
+        ...newPantryItems[existingIdx],
+        amount: Math.round((newPantryItems[existingIdx].amount + item.toBuyAmount) * 10) / 10,
+      };
+    } else {
+      newPantryItems.push({
+        id: `pantry_from_shop_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        name: item.name,
+        amount: item.toBuyAmount,
+        unit: item.unit,
+        category: item.category,
+      });
+    }
+    setPantryState(newPantryItems);
+
+    // Clean bought map
+    setBoughtMap(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
+    // If custom, remove it
+    setCustomShoppingItems(prev => prev.filter(c => c.id !== id));
+
+    showToast(`🥕 "${item.name}" agregado a tu despensa`, 'success');
+  };
+
   const clearEntireShoppingList = () => {
     // Collect all current shopping list item IDs and mark them dismissed
     const allIds: Record<string, boolean> = { ...dismissedShoppingIds };
@@ -951,6 +990,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         removeCustomShoppingItem,
         removeShoppingItem,
         clearBoughtItems,
+        moveSingleShoppingItemToPantry,
         clearEntireShoppingList,
         restoreShoppingListFromMenu,
         hasDismissedShoppingItems,

@@ -520,7 +520,7 @@ export const RecipesView: React.FC = () => {
                           className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-[#FFFDF7] hover:text-[#4D96FF] flex items-center gap-2 transition-colors cursor-pointer"
                         >
                           <Tag className="w-3.5 h-3.5 text-[#4D96FF]" />
-                          <span>Asignar categoría ({recipe.category || 'Tartas'})</span>
+                          <span>Cambiar ícono y categoría</span>
                         </button>
                         <button
                           type="button"
