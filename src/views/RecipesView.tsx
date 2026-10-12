@@ -15,6 +15,8 @@ import {
   Tag,
   FileUp,
   FolderPlus,
+  Carrot,
+  CheckCircle2,
 } from 'lucide-react';
 import { normalizeIngredientName } from '../services/shoppingCalculator';
 import { getRecipeImageUrl } from '../services/imageService';
@@ -29,6 +31,8 @@ export const RecipesView: React.FC = () => {
   const {
     recipes,
     pantry,
+    addPantryItem,
+    getPantryCategoryIcon,
     setSelectedRecipeDetail,
     pantryMatches,
     addCustomShoppingItem,
@@ -52,6 +56,7 @@ export const RecipesView: React.FC = () => {
   const [filterOnlyReady, setFilterOnlyReady] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [recipeCategoryToDelete, setRecipeCategoryToDelete] = useState<string | null>(null);
+  const [recipeToAddIngredientsToPantry, setRecipeToAddIngredientsToPantry] = useState<Recipe | null>(null);
 
   const normalizeText = (text: string) =>
     (text || '')
@@ -515,6 +520,18 @@ export const RecipesView: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenMenuId(null);
+                            setRecipeToAddIngredientsToPantry(recipe);
+                          }}
+                          className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-emerald-50 hover:text-[#2b8838] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Carrot className="w-3.5 h-3.5 text-[#39B54A]" />
+                          <span>Agregar a despensa</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
                             setRecipeToChangeCategory(recipe);
                           }}
                           className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-[#FFFDF7] hover:text-[#4D96FF] flex items-center gap-2 transition-colors cursor-pointer"
@@ -656,6 +673,90 @@ export const RecipesView: React.FC = () => {
         </div>
       </div>
     )}
+
+    {/* Confirmation Modal to Add Recipe Ingredients to Pantry */}
+    {recipeToAddIngredientsToPantry && (() => {
+      const missingIngredients = recipeToAddIngredientsToPantry.ingredients.filter(
+        ing => !pantry.some(p => normalizeIngredientName(p.name) === normalizeIngredientName(ing.name))
+      );
+
+      const toAdd = missingIngredients.length > 0
+        ? missingIngredients
+        : recipeToAddIngredientsToPantry.ingredients;
+
+      const handleConfirmAdd = () => {
+        toAdd.forEach(ing => {
+          addPantryItem({
+            name: ing.name,
+            amount: ing.amount,
+            unit: ing.unit,
+            category: ing.category,
+          });
+        });
+
+        showToast(`🥕 ${toAdd.length} ingredientes de "${recipeToAddIngredientsToPantry.name}" agregados a la despensa`, 'success');
+        setRecipeToAddIngredientsToPantry(null);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
+            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
+              <Carrot className="w-6 h-6 text-[#39B54A]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-[#263238]">
+                ¿Confirmar ingreso a tu despensa?
+              </h3>
+              <p className="text-xs text-[#263238]/70">
+                {missingIngredients.length > 0
+                  ? `Se registrarán los ${missingIngredients.length} ingredientes faltantes de la receta "${recipeToAddIngredientsToPantry.name}" en tu despensa:`
+                  : `Se registrarán los ${toAdd.length} ingredientes de "${recipeToAddIngredientsToPantry.name}" en tu despensa:`}
+              </p>
+            </div>
+
+            <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
+              {toAdd.map((ing, idx) => (
+                <div key={idx} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
+                  <div className="min-w-0 flex items-center gap-1.5 truncate">
+                    <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
+                    <span className="font-semibold text-[#263238] truncate">{ing.name}</span>
+                  </div>
+                  <span className="text-[#39B54A] font-extrabold shrink-0 bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
+                    +{ing.amount} {ing.unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                Al estar en la despensa, estos ingredientes se descontarán automáticamente de tu lista de compras.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setRecipeToAddIngredientsToPantry(null)}
+                className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAdd}
+                className="px-4 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Confirmar y sumar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
   </div>
 );
 };

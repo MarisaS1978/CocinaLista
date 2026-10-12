@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { DayOfWeek, MealType } from '../types';
+import { DayOfWeek, MealType, Ingredient } from '../types';
 import {
   X,
   Clock,
@@ -14,6 +14,10 @@ import {
   MoreVertical,
   Trash2,
   Tag,
+  Sun,
+  Carrot,
+  Smartphone,
+  Sparkles,
 } from 'lucide-react';
 import { normalizeIngredientName } from '../services/shoppingCalculator';
 import { RecipeVisual } from './RecipeVisual';
@@ -24,6 +28,8 @@ export const RecipeDetailModal: React.FC = () => {
     selectedRecipeDetail,
     setSelectedRecipeDetail,
     pantry,
+    addPantryItem,
+    getPantryCategoryIcon,
     setWeeklyMeal,
     addCustomShoppingItem,
     addRecipeIngredientsToShopping,
@@ -38,12 +44,103 @@ export const RecipeDetailModal: React.FC = () => {
   const [selectedMealType, setSelectedMealType] = useState<MealType>('almuerzo');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
+  // Pantalla activa (Screen Wake Lock API)
+  const [isWakeLockActive, setIsWakeLockActive] = useState(false);
+  const wakeLockRef = useRef<any>(null);
+
+  // Modales de confirmación para agregar a la despensa
+  const [ingredientToAddToPantry, setIngredientToAddToPantry] = useState<Ingredient | null>(null);
+  const [showAddAllMissingToPantryModal, setShowAddAllMissingToPantryModal] = useState(false);
+
+  // Request Wake Lock
+  const requestWakeLock = async () => {
+    if ('wakeLock' in navigator) {
+      try {
+        const sentinel = await (navigator as any).wakeLock.request('screen');
+        wakeLockRef.current = sentinel;
+        setIsWakeLockActive(true);
+        sentinel.addEventListener('release', () => {
+          setIsWakeLockActive(false);
+          wakeLockRef.current = null;
+        });
+        showToast('☀️ Pantalla activa: tu dispositivo no se bloqueará mientras cocinás', 'success');
+      } catch (err) {
+        console.warn('Wake Lock request error:', err);
+        setIsWakeLockActive(true);
+        showToast('☀️ Modo pantalla activa encendido', 'info');
+      }
+    } else {
+      setIsWakeLockActive(true);
+      showToast('☀️ Modo cocina activado (tu navegador no admite bloqueo directo de pantalla)', 'info');
+    }
+  };
+
+  // Release Wake Lock
+  const releaseWakeLock = async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+      } catch (err) {
+        console.warn('Wake Lock release error:', err);
+      }
+      wakeLockRef.current = null;
+    }
+    setIsWakeLockActive(false);
+    showToast('📱 Pantalla activa desactivada', 'info');
+  };
+
+  const toggleWakeLock = () => {
+    if (isWakeLockActive) {
+      releaseWakeLock();
+    } else {
+      requestWakeLock();
+    }
+  };
+
+  // Limpieza al desmontar o cerrar el modal
+  useEffect(() => {
+    return () => {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {});
+        wakeLockRef.current = null;
+      }
+    };
+  }, []);
+
+  // Re-adquirir Wake Lock si el usuario cambia de pestaña y regresa
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isWakeLockActive && !wakeLockRef.current) {
+        if ('wakeLock' in navigator) {
+          try {
+            const sentinel = await (navigator as any).wakeLock.request('screen');
+            wakeLockRef.current = sentinel;
+            sentinel.addEventListener('release', () => {
+              setIsWakeLockActive(false);
+              wakeLockRef.current = null;
+            });
+          } catch (err) {
+            console.warn('Error al readquirir Wake Lock:', err);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isWakeLockActive]);
+
   if (!selectedRecipeDetail) return null;
 
   const recipe = selectedRecipeDetail;
 
   // Check which ingredients exist in pantry
   const pantryKeySet = new Set(pantry.map(p => normalizeIngredientName(p.name)));
+  const missingIngredients = recipe.ingredients.filter(
+    ing => !pantryKeySet.has(normalizeIngredientName(ing.name))
+  );
 
   const handleAddToMenu = () => {
     setWeeklyMeal(selectedDay, selectedMealType, { recipeId: recipe.id });
@@ -52,14 +149,10 @@ export const RecipeDetailModal: React.FC = () => {
   };
 
   const handleAddAllToShopping = () => {
-    const missing = recipe.ingredients.filter(
-      ing => !pantryKeySet.has(normalizeIngredientName(ing.name))
-    );
-
-    if (missing.length > 0) {
+    if (missingIngredients.length > 0) {
       addRecipeIngredientsToShopping(
         recipe.name,
-        missing.map(ing => ({
+        missingIngredients.map(ing => ({
           name: ing.name,
           amount: ing.amount,
           unit: ing.unit,
@@ -69,6 +162,45 @@ export const RecipeDetailModal: React.FC = () => {
     } else {
       showToast('¡Ya tenés todos los ingredientes en tu despensa!', 'info');
     }
+  };
+
+  // Confirmar y agregar un ingrediente individual a despensa
+  const handleConfirmSingleToPantry = () => {
+    if (!ingredientToAddToPantry) return;
+
+    addPantryItem({
+      name: ingredientToAddToPantry.name,
+      amount: ingredientToAddToPantry.amount,
+      unit: ingredientToAddToPantry.unit,
+      category: ingredientToAddToPantry.category,
+    });
+
+    setIngredientToAddToPantry(null);
+    showToast(`🥕 "${ingredientToAddToPantry.name}" agregado a tu despensa`, 'success');
+  };
+
+  // Confirmar y agregar todos los ingredientes faltantes a despensa
+  const handleConfirmAllMissingToPantry = () => {
+    missingIngredients.forEach(ing => {
+      addPantryItem({
+        name: ing.name,
+        amount: ing.amount,
+        unit: ing.unit,
+        category: ing.category,
+      });
+    });
+
+    setShowAddAllMissingToPantryModal(false);
+    showToast(`🥕 ${missingIngredients.length} ingredientes agregados a tu despensa`, 'success');
+  };
+
+  const handleClose = () => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+    }
+    setIsWakeLockActive(false);
+    setSelectedRecipeDetail(null);
   };
 
   return (
@@ -84,13 +216,27 @@ export const RecipeDetailModal: React.FC = () => {
             showCategoryBadge={false}
           />
 
-          {/* Top action controls: Editar, ⋮ Más, and Close */}
+          {/* Top action controls: Pantalla activa, Editar, ⋮ Más, and Close */}
           <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleWakeLock}
+              title={isWakeLockActive ? 'Desactivar pantalla activa' : 'Activar pantalla activa para que no se bloquee el dispositivo al cocinar'}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border ${
+                isWakeLockActive
+                  ? 'bg-amber-400 text-amber-950 border-amber-500 ring-2 ring-amber-300 shadow-md'
+                  : 'bg-white/95 text-[#263238] hover:bg-white border-[#263238]/10 hover:border-amber-400'
+              }`}
+            >
+              <Sun className={`w-3.5 h-3.5 ${isWakeLockActive ? 'text-amber-950 fill-amber-950' : 'text-amber-500'}`} />
+              <span className="hidden sm:inline">{isWakeLockActive ? 'Pantalla activa ON' : 'Pantalla activa'}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
                 const rec = recipe;
-                setSelectedRecipeDetail(null);
+                handleClose();
                 setEditingRecipe(rec);
               }}
               className="px-3 py-1.5 rounded-full bg-white/95 text-[#263238] hover:bg-white text-xs font-bold backdrop-blur-md flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-[#263238]/10 hover:border-[#39B54A]"
@@ -116,13 +262,26 @@ export const RecipeDetailModal: React.FC = () => {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowMoreMenu(false)}
                   />
-                  <div className="absolute right-0 top-9 z-50 bg-white rounded-2xl shadow-xl border border-[#263238]/10 py-1.5 w-48 text-xs animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 top-9 z-50 bg-white rounded-2xl shadow-xl border border-[#263238]/10 py-1.5 w-52 text-xs animate-in fade-in zoom-in-95">
+                    {missingIngredients.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowAddAllMissingToPantryModal(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-emerald-50 hover:text-[#2b8838] flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Carrot className="w-3.5 h-3.5 text-[#39B54A]" />
+                        <span>Sumar faltantes a despensa</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setShowMoreMenu(false);
                         const rec = recipe;
-                        setSelectedRecipeDetail(null);
+                        handleClose();
                         setRecipeToChangeCategory(rec);
                       }}
                       className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-slate-50 hover:text-[#4D96FF] flex items-center gap-2 transition-colors cursor-pointer"
@@ -135,7 +294,7 @@ export const RecipeDetailModal: React.FC = () => {
                       onClick={() => {
                         setShowMoreMenu(false);
                         const rec = recipe;
-                        setSelectedRecipeDetail(null);
+                        handleClose();
                         setDeletingRecipe(rec);
                       }}
                       className="w-full px-3.5 py-2 text-left font-semibold text-[#FF5C5C] hover:bg-red-50 flex items-center gap-2 transition-colors cursor-pointer"
@@ -149,7 +308,7 @@ export const RecipeDetailModal: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setSelectedRecipeDetail(null)}
+              onClick={handleClose}
               className="w-8 h-8 rounded-full bg-[#263238]/70 text-white backdrop-blur-md flex items-center justify-center hover:bg-[#263238]/90 transition-colors cursor-pointer"
               title="Cerrar"
             >
@@ -200,13 +359,27 @@ export const RecipeDetailModal: React.FC = () => {
         <div className="p-6 space-y-6">
           {/* Ingredients section */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[#263238]">
-                Ingredientes necesarios
-              </h3>
-              <span className="text-xs text-[#263238]/50">
-                {recipe.ingredients.length} items
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#263238]">
+                  Ingredientes necesarios
+                </h3>
+                <span className="text-xs text-[#263238]/50">
+                  ({recipe.ingredients.length} items)
+                </span>
+              </div>
+
+              {missingIngredients.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddAllMissingToPantryModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#39B54A]/10 hover:bg-[#39B54A]/20 text-[#2b8838] border border-[#39B54A]/30 text-xs font-bold transition-colors cursor-pointer"
+                  title="Sumar todos los ingredientes faltantes a mi despensa con confirmación"
+                >
+                  <Carrot className="w-3.5 h-3.5 text-[#FF8A3D]" />
+                  <span>Sumar faltantes a despensa ({missingIngredients.length})</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -215,32 +388,98 @@ export const RecipeDetailModal: React.FC = () => {
                 return (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-[#263238]/8 bg-[#FFFDF7] text-xs"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-[#263238]/8 bg-[#FFFDF7] text-xs gap-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#263238]">{ing.name}</span>
-                      <span className="text-[#263238]/60">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-bold text-[#263238] truncate">{ing.name}</span>
+                      <span className="text-[#263238]/60 shrink-0">
                         — {ing.amount} {ing.unit}
                       </span>
                     </div>
 
-                    <div>
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {inPantry ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#39B54A]">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#39B54A] bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          En despensa
+                          <span>En despensa</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF8A3D]">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          Falta comprar
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF8A3D]">
+                            <AlertCircle className="w-3 h-3" />
+                            Falta comprar
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIngredientToAddToPantry(ing)}
+                            title={`Tengo ${ing.name} en casa: confirmar y agregar a mi despensa`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#39B54A]/10 hover:bg-[#39B54A]/20 text-[#2b8838] border border-[#39B54A]/30 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            <Carrot className="w-3.5 h-3.5 text-[#FF8A3D]" />
+                            <span>+ A despensa</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
                 );
               })}
             </div>
+          </div>
+
+          {/* Modo Cocina: Pantalla Activa Banner */}
+          <div
+            className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              isWakeLockActive
+                ? 'bg-amber-50/90 border-amber-300 text-amber-950 shadow-xs ring-1 ring-amber-300'
+                : 'bg-[#FFFDF7] border-[#263238]/12 text-[#263238]'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
+                  isWakeLockActive
+                    ? 'bg-amber-400 text-white shadow-xs animate-pulse'
+                    : 'bg-white border border-[#263238]/15 text-[#263238]/70 shadow-2xs'
+                }`}
+              >
+                {isWakeLockActive ? '☀️' : '📱'}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold tracking-tight">
+                    Modo cocina: Pantalla activa
+                  </h4>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      isWakeLockActive
+                        ? 'bg-amber-200 text-amber-900 font-bold'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {isWakeLockActive ? 'ACTIVADA' : 'DESACTIVADA'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#263238]/70 mt-0.5 leading-snug">
+                  {isWakeLockActive
+                    ? 'Tu dispositivo permanecerá encendido para que cocines sin tener que tocar la pantalla con las manos sucias.'
+                    : 'Evitá que el teléfono o tablet se apague o bloquee mientras estás preparando esta receta.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleWakeLock}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 self-end sm:self-auto ${
+                isWakeLockActive
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                  : 'bg-[#263238] hover:bg-[#37474F] text-white shadow-xs'
+              }`}
+            >
+              <Sun className={`w-3.5 h-3.5 ${isWakeLockActive ? 'text-white' : 'text-[#FFD447]'}`} />
+              <span>{isWakeLockActive ? 'Desactivar pantalla' : 'Mantener activa'}</span>
+            </button>
           </div>
 
           {/* Instructions section */}
@@ -332,6 +571,136 @@ export const RecipeDetailModal: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación: Agregar UN ingrediente a la despensa */}
+      {ingredientToAddToPantry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
+            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
+              <Carrot className="w-6 h-6 text-[#39B54A]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-[#263238]">
+                ¿Confirmar ingreso a tu despensa?
+              </h3>
+              <p className="text-xs text-[#263238]/70">
+                ¿Confirmás registrar este ingrediente de la receta en tu despensa?
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 space-y-2 text-xs">
+              <div className="flex items-center justify-between pb-1.5 border-b border-[#263238]/6">
+                <span className="text-[#263238]/60 font-semibold">Alimento:</span>
+                <span className="text-[#263238] font-bold text-sm truncate max-w-[180px]">
+                  {ingredientToAddToPantry.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-1.5 border-b border-[#263238]/6">
+                <span className="text-[#263238]/60 font-semibold">Cantidad a ingresar:</span>
+                <span className="text-[#39B54A] font-extrabold text-sm">
+                  +{ingredientToAddToPantry.amount} {ingredientToAddToPantry.unit}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-1.5 border-b border-[#263238]/6">
+                <span className="text-[#263238]/60 font-semibold">Categoría:</span>
+                <span className="text-[#263238] font-bold flex items-center gap-1">
+                  <span>{getPantryCategoryIcon(ingredientToAddToPantry.category)}</span>
+                  <span>{ingredientToAddToPantry.category}</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#263238]/60 font-semibold">Receta:</span>
+                <span className="text-[#263238]/80 font-medium truncate max-w-[170px]">
+                  {recipe.name}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                Se registrará en <strong>Mi despensa</strong> y se descontará automáticamente de tu lista de compras.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setIngredientToAddToPantry(null)}
+                className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSingleToPantry}
+                className="px-4 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Confirmar y agregar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación: Agregar TODOS los ingredientes faltantes a la despensa */}
+      {showAddAllMissingToPantryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
+            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
+              <Carrot className="w-6 h-6 text-[#39B54A]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-[#263238]">
+                ¿Confirmar ingreso a tu despensa?
+              </h3>
+              <p className="text-xs text-[#263238]/70">
+                Se registrarán los <strong>{missingIngredients.length}</strong> ingredientes de <em>{recipe.name}</em> que no tenías en tu despensa:
+              </p>
+            </div>
+
+            <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
+              {missingIngredients.map((ing, idx) => (
+                <div key={idx} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
+                  <div className="min-w-0 flex items-center gap-1.5 truncate">
+                    <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
+                    <span className="font-semibold text-[#263238] truncate">{ing.name}</span>
+                  </div>
+                  <span className="text-[#39B54A] font-extrabold shrink-0 bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
+                    +{ing.amount} {ing.unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                Estos ingredientes ya no figurarán como faltantes y no se pedirán en tu lista de compras.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAddAllMissingToPantryModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAllMissingToPantry}
+                className="px-4 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Confirmar y sumar todos</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
