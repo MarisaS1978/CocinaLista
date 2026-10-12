@@ -375,9 +375,9 @@ export const ShoppingListView: React.FC = () => {
                 </div>
 
                 <div className="divide-y divide-[#263238]/6">
-                  {items.map(item => (
+                  {items.map((item, idx) => (
                     <div
-                      key={item.id}
+                      key={`${item.id}_${idx}`}
                       className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 group transition-colors"
                     >
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -489,9 +489,9 @@ export const ShoppingListView: React.FC = () => {
               </div>
 
               <div className="divide-y divide-slate-200/80">
-                {filteredBought.map(item => (
+                {filteredBought.map((item, idx) => (
                   <div
-                    key={item.id}
+                    key={`${item.id}_${idx}`}
                     className="py-2.5 flex items-center justify-between gap-3 text-slate-500"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
@@ -648,8 +648,8 @@ export const ShoppingListView: React.FC = () => {
 
             {/* List of items to transfer */}
             <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
-              {boughtItems.map(item => (
-                <div key={item.id} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
+              {boughtItems.map((item, idx) => (
+                <div key={`${item.id}_${idx}`} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
                   <div className="min-w-0 flex items-center gap-1.5 truncate">
                     <span className="text-base">{getPantryCategoryIcon(item.category)}</span>
                     <span className="font-semibold text-[#263238] truncate">{item.name}</span>

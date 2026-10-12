@@ -321,9 +321,9 @@ export const PantryView: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {items.map(item => (
+                  {items.map((item, itemIdx) => (
                     <div
-                      key={item.id}
+                      key={`${item.id}_${itemIdx}`}
                       className="p-3.5 rounded-2xl border border-[#263238]/8 bg-[#FFFDF7] flex flex-col justify-between gap-3 group hover:border-[#39B54A]/50 hover:shadow-xs transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">

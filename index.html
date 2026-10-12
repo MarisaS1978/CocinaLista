@@ -10,6 +10,31 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
+    <script>
+      // Ignore harmless WebSocket errors in preview environment
+      (function() {
+        const origConsoleError = console.error;
+        console.error = function(...args) {
+          if (args.length > 0 && typeof args[0] === 'string' && (args[0].includes('[vite]') || args[0].includes('WebSocket closed without opened'))) {
+            return;
+          }
+          origConsoleError.apply(console, args);
+        };
+        window.addEventListener('error', function(e) {
+          if (e && (e.message?.includes('WebSocket') || e.message?.includes('vite'))) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e && String(e.reason).includes('WebSocket')) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
+
     <!-- PWA & Mobile Web App Meta -->
     <meta name="theme-color" content="#39B54A" />
     <meta name="mobile-web-app-capable" content="yes" />

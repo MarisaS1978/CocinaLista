@@ -29,6 +29,7 @@ export const RecipeDetailModal: React.FC = () => {
     setSelectedRecipeDetail,
     pantry,
     addPantryItem,
+    addPantryItems,
     getPantryCategoryIcon,
     setWeeklyMeal,
     addCustomShoppingItem,
@@ -47,21 +48,27 @@ export const RecipeDetailModal: React.FC = () => {
   // Pantalla activa (Screen Wake Lock API)
   const [isWakeLockActive, setIsWakeLockActive] = useState(false);
   const wakeLockRef = useRef<any>(null);
+  const shouldKeepWakeLockRef = useRef<boolean>(false);
 
   // Modales de confirmación para agregar a la despensa
   const [ingredientToAddToPantry, setIngredientToAddToPantry] = useState<Ingredient | null>(null);
+  const [ingredientAmountToAdd, setIngredientAmountToAdd] = useState<number>(1);
   const [showAddAllMissingToPantryModal, setShowAddAllMissingToPantryModal] = useState(false);
+  const [selectedMissingIngredients, setSelectedMissingIngredients] = useState<Record<string, boolean>>({});
 
   // Request Wake Lock
   const requestWakeLock = async () => {
+    shouldKeepWakeLockRef.current = true;
     if ('wakeLock' in navigator) {
       try {
         const sentinel = await (navigator as any).wakeLock.request('screen');
         wakeLockRef.current = sentinel;
         setIsWakeLockActive(true);
         sentinel.addEventListener('release', () => {
-          setIsWakeLockActive(false);
           wakeLockRef.current = null;
+          if (!shouldKeepWakeLockRef.current) {
+            setIsWakeLockActive(false);
+          }
         });
         showToast('☀️ Pantalla activa: tu dispositivo no se bloqueará mientras cocinás', 'success');
       } catch (err) {
@@ -71,12 +78,13 @@ export const RecipeDetailModal: React.FC = () => {
       }
     } else {
       setIsWakeLockActive(true);
-      showToast('☀️ Modo cocina activado (tu navegador no admite bloqueo directo de pantalla)', 'info');
+      showToast('☀️ Modo pantalla activa activado', 'info');
     }
   };
 
   // Release Wake Lock
   const releaseWakeLock = async () => {
+    shouldKeepWakeLockRef.current = false;
     if (wakeLockRef.current) {
       try {
         await wakeLockRef.current.release();
@@ -100,6 +108,7 @@ export const RecipeDetailModal: React.FC = () => {
   // Limpieza al desmontar o cerrar el modal
   useEffect(() => {
     return () => {
+      shouldKeepWakeLockRef.current = false;
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {});
         wakeLockRef.current = null;
@@ -110,14 +119,17 @@ export const RecipeDetailModal: React.FC = () => {
   // Re-adquirir Wake Lock si el usuario cambia de pestaña y regresa
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && isWakeLockActive && !wakeLockRef.current) {
+      if (document.visibilityState === 'visible' && shouldKeepWakeLockRef.current && !wakeLockRef.current) {
         if ('wakeLock' in navigator) {
           try {
             const sentinel = await (navigator as any).wakeLock.request('screen');
             wakeLockRef.current = sentinel;
+            setIsWakeLockActive(true);
             sentinel.addEventListener('release', () => {
-              setIsWakeLockActive(false);
               wakeLockRef.current = null;
+              if (!shouldKeepWakeLockRef.current) {
+                setIsWakeLockActive(false);
+              }
             });
           } catch (err) {
             console.warn('Error al readquirir Wake Lock:', err);
@@ -130,7 +142,7 @@ export const RecipeDetailModal: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isWakeLockActive]);
+  }, []);
 
   if (!selectedRecipeDetail) return null;
 
@@ -164,34 +176,54 @@ export const RecipeDetailModal: React.FC = () => {
     }
   };
 
+  // Abrir modal para sumar ingredientes a despensa
+  const handleOpenAddIngredientsToPantry = () => {
+    const itemsToPrompt = missingIngredients.length > 0 ? missingIngredients : recipe.ingredients;
+    const initialMap: Record<string, boolean> = {};
+    itemsToPrompt.forEach(ing => {
+      initialMap[ing.name] = true;
+    });
+    setSelectedMissingIngredients(initialMap);
+    setShowAddAllMissingToPantryModal(true);
+  };
+
   // Confirmar y agregar un ingrediente individual a despensa
   const handleConfirmSingleToPantry = () => {
     if (!ingredientToAddToPantry) return;
 
+    const finalAmount = Math.max(0.1, Number(ingredientAmountToAdd) || ingredientToAddToPantry.amount);
+
     addPantryItem({
       name: ingredientToAddToPantry.name,
-      amount: ingredientToAddToPantry.amount,
+      amount: finalAmount,
       unit: ingredientToAddToPantry.unit,
       category: ingredientToAddToPantry.category,
     });
 
     setIngredientToAddToPantry(null);
-    showToast(`🥕 "${ingredientToAddToPantry.name}" agregado a tu despensa`, 'success');
   };
 
-  // Confirmar y agregar todos los ingredientes faltantes a despensa
+  // Confirmar y agregar ingredientes seleccionados a despensa
   const handleConfirmAllMissingToPantry = () => {
-    missingIngredients.forEach(ing => {
-      addPantryItem({
+    const itemsToPrompt = missingIngredients.length > 0 ? missingIngredients : recipe.ingredients;
+    const toAdd = itemsToPrompt.filter(ing => selectedMissingIngredients[ing.name] !== false);
+
+    if (toAdd.length === 0) {
+      setShowAddAllMissingToPantryModal(false);
+      return;
+    }
+
+    addPantryItems(
+      toAdd.map(ing => ({
         name: ing.name,
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-      });
-    });
+      })),
+      `🥕 ${toAdd.length} ${toAdd.length === 1 ? 'ingrediente de la receta agregado' : 'ingredientes de la receta agregados'} a tu despensa`
+    );
 
     setShowAddAllMissingToPantryModal(false);
-    showToast(`🥕 ${missingIngredients.length} ingredientes agregados a tu despensa`, 'success');
   };
 
   const handleClose = () => {
@@ -263,19 +295,17 @@ export const RecipeDetailModal: React.FC = () => {
                     onClick={() => setShowMoreMenu(false)}
                   />
                   <div className="absolute right-0 top-9 z-50 bg-white rounded-2xl shadow-xl border border-[#263238]/10 py-1.5 w-52 text-xs animate-in fade-in zoom-in-95">
-                    {missingIngredients.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          setShowAddAllMissingToPantryModal(true);
-                        }}
-                        className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-emerald-50 hover:text-[#2b8838] flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Carrot className="w-3.5 h-3.5 text-[#39B54A]" />
-                        <span>Sumar faltantes a despensa</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        handleOpenAddIngredientsToPantry();
+                      }}
+                      className="w-full px-3.5 py-2 text-left font-semibold text-[#263238] hover:bg-emerald-50 hover:text-[#2b8838] flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Carrot className="w-3.5 h-3.5 text-[#39B54A]" />
+                      <span>{missingIngredients.length > 0 ? 'Sumar faltantes a despensa' : 'Sumar ingredientes a despensa'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -369,17 +399,19 @@ export const RecipeDetailModal: React.FC = () => {
                 </span>
               </div>
 
-              {missingIngredients.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAddAllMissingToPantryModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#39B54A]/10 hover:bg-[#39B54A]/20 text-[#2b8838] border border-[#39B54A]/30 text-xs font-bold transition-colors cursor-pointer"
-                  title="Sumar todos los ingredientes faltantes a mi despensa con confirmación"
-                >
-                  <Carrot className="w-3.5 h-3.5 text-[#FF8A3D]" />
-                  <span>Sumar faltantes a despensa ({missingIngredients.length})</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleOpenAddIngredientsToPantry}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#39B54A]/10 hover:bg-[#39B54A]/20 text-[#2b8838] border border-[#39B54A]/30 text-xs font-bold transition-colors cursor-pointer"
+                title="Sumar ingredientes de la receta a mi despensa con confirmación previa"
+              >
+                <Carrot className="w-3.5 h-3.5 text-[#FF8A3D]" />
+                <span>
+                  {missingIngredients.length > 0
+                    ? `Sumar faltantes a despensa (${missingIngredients.length})`
+                    : 'Sumar a despensa'}
+                </span>
+              </button>
             </div>
 
             <div className="space-y-2">
@@ -399,10 +431,23 @@ export const RecipeDetailModal: React.FC = () => {
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {inPantry ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#39B54A] bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>En despensa</span>
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#39B54A] bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>En despensa</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIngredientToAddToPantry(ing);
+                              setIngredientAmountToAdd(ing.amount);
+                            }}
+                            title={`Sumar más ${ing.name} a mi despensa`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[#263238]/60 hover:text-[#39B54A] hover:bg-[#39B54A]/10 border border-transparent hover:border-[#39B54A]/30 text-xs font-semibold transition-colors cursor-pointer"
+                          >
+                            <span>+ Sumar</span>
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF8A3D]">
@@ -411,7 +456,10 @@ export const RecipeDetailModal: React.FC = () => {
                           </span>
                           <button
                             type="button"
-                            onClick={() => setIngredientToAddToPantry(ing)}
+                            onClick={() => {
+                              setIngredientToAddToPantry(ing);
+                              setIngredientAmountToAdd(ing.amount);
+                            }}
                             title={`Tengo ${ing.name} en casa: confirmar y agregar a mi despensa`}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#39B54A]/10 hover:bg-[#39B54A]/20 text-[#2b8838] border border-[#39B54A]/30 text-xs font-bold transition-colors cursor-pointer"
                           >
@@ -597,9 +645,17 @@ export const RecipeDetailModal: React.FC = () => {
               </div>
               <div className="flex items-center justify-between pb-1.5 border-b border-[#263238]/6">
                 <span className="text-[#263238]/60 font-semibold">Cantidad a ingresar:</span>
-                <span className="text-[#39B54A] font-extrabold text-sm">
-                  +{ingredientToAddToPantry.amount} {ingredientToAddToPantry.unit}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.1"
+                    value={ingredientAmountToAdd}
+                    onChange={e => setIngredientAmountToAdd(Math.max(0.1, Number(e.target.value) || 0.1))}
+                    className="w-16 px-2 py-0.5 text-right font-extrabold text-[#39B54A] bg-white border border-[#39B54A]/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
+                  />
+                  <span className="text-xs font-bold text-[#263238]/70">{ingredientToAddToPantry.unit}</span>
+                </div>
               </div>
               <div className="flex items-center justify-between pb-1.5 border-b border-[#263238]/6">
                 <span className="text-[#263238]/60 font-semibold">Categoría:</span>
@@ -645,60 +701,135 @@ export const RecipeDetailModal: React.FC = () => {
       )}
 
       {/* Modal de confirmación: Agregar TODOS los ingredientes faltantes a la despensa */}
-      {showAddAllMissingToPantryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
-            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
-              <Carrot className="w-6 h-6 text-[#39B54A]" />
-            </div>
-            <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-[#263238]">
-                ¿Confirmar ingreso a tu despensa?
-              </h3>
-              <p className="text-xs text-[#263238]/70">
-                Se registrarán los <strong>{missingIngredients.length}</strong> ingredientes de <em>{recipe.name}</em> que no tenías en tu despensa:
-              </p>
-            </div>
+      {showAddAllMissingToPantryModal && (() => {
+        const itemsToPrompt = missingIngredients.length > 0 ? missingIngredients : recipe.ingredients;
+        const selectedCount = itemsToPrompt.filter(ing => selectedMissingIngredients[ing.name] !== false).length;
+        const allSelected = selectedCount === itemsToPrompt.length;
 
-            <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
-              {missingIngredients.map((ing, idx) => (
-                <div key={idx} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
-                  <div className="min-w-0 flex items-center gap-1.5 truncate">
-                    <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
-                    <span className="font-semibold text-[#263238] truncate">{ing.name}</span>
-                  </div>
-                  <span className="text-[#39B54A] font-extrabold shrink-0 bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
-                    +{ing.amount} {ing.unit}
-                  </span>
-                </div>
-              ))}
-            </div>
+        const toggleAll = () => {
+          const next: Record<string, boolean> = {};
+          itemsToPrompt.forEach(ing => {
+            next[ing.name] = !allSelected;
+          });
+          setSelectedMissingIngredients(next);
+        };
 
-            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
-              <span className="text-base">💡</span>
-              <span>
-                Estos ingredientes ya no figurarán como faltantes y no se pedirán en tu lista de compras.
-              </span>
-            </div>
+        const toggleItem = (name: string) => {
+          setSelectedMissingIngredients(prev => ({
+            ...prev,
+            [name]: prev[name] === false ? true : false,
+          }));
+        };
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowAddAllMissingToPantryModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAllMissingToPantry}
-                className="px-4 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirmar y sumar todos</span>
-              </button>
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
+              <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
+                <Carrot className="w-6 h-6 text-[#39B54A]" />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-bold text-[#263238]">
+                  ¿Confirmar ingreso a tu despensa?
+                </h3>
+                <p className="text-xs text-[#263238]/70">
+                  {missingIngredients.length > 0
+                    ? `Elegí los ingredientes de "${recipe.name}" que querés sumar a tu despensa:`
+                    : `Confirmá los ingredientes de "${recipe.name}" a sumar a tu despensa:`}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="font-bold text-[#263238]/70">
+                  Seleccionados: <strong className="text-[#39B54A]">{selectedCount}</strong> de {itemsToPrompt.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="text-xs font-bold text-[#4D96FF] hover:underline cursor-pointer"
+                >
+                  {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                </button>
+              </div>
+
+              <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
+                {itemsToPrompt.map((ing, idx) => {
+                  const isChecked = selectedMissingIngredients[ing.name] !== false;
+                  return (
+                    <label
+                      key={idx}
+                      className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2 cursor-pointer hover:bg-slate-50/50 p-1 rounded-lg transition-colors"
+                    >
+                      <div className="min-w-0 flex items-center gap-2 truncate">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleItem(ing.name)}
+                          className="w-4 h-4 rounded text-[#39B54A] focus:ring-[#39B54A] cursor-pointer"
+                        />
+                        <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
+                        <span className={`font-semibold truncate ${isChecked ? 'text-[#263238]' : 'text-[#263238]/40 line-through'}`}>
+                          {ing.name}
+                        </span>
+                      </div>
+                      <span className={`font-extrabold shrink-0 px-2 py-0.5 rounded-md ${
+                        isChecked ? 'text-[#39B54A] bg-[#39B54A]/10' : 'text-[#263238]/40 bg-slate-100'
+                      }`}>
+                        +{ing.amount} {ing.unit}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
+                <span className="text-base">💡</span>
+                <span>
+                  Al confirmarlos, figurarán como disponibles en tu despensa y se descontarán automáticamente de las compras.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAddAllMissingToPantryModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAllMissingToPantry}
+                  disabled={selectedCount === 0}
+                  className={`px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-colors ${
+                    selectedCount === 0
+                      ? 'bg-slate-300 cursor-not-allowed'
+                      : 'bg-[#39B54A] hover:bg-[#329e41] cursor-pointer'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirmar ({selectedCount})</span>
+                </button>
+              </div>
             </div>
           </div>
+        );
+      })()}
+
+      {/* Floating indicator: Pantalla activa encendida */}
+      {isWakeLockActive && (
+        <div className="fixed bottom-4 right-4 z-40 animate-in fade-in slide-in-from-bottom-2">
+          <button
+            type="button"
+            onClick={toggleWakeLock}
+            className="px-3.5 py-2 rounded-2xl bg-amber-400 text-amber-950 font-bold text-xs shadow-lg flex items-center gap-2 border border-amber-500 hover:bg-amber-300 transition-all cursor-pointer ring-2 ring-amber-200"
+            title="Tocar para apagar modo pantalla activa"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-900 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-900"></span>
+            </span>
+            <span>☀️ Pantalla activa ON</span>
+          </button>
         </div>
       )}
     </div>

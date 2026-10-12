@@ -32,6 +32,7 @@ export const RecipesView: React.FC = () => {
     recipes,
     pantry,
     addPantryItem,
+    addPantryItems,
     getPantryCategoryIcon,
     setSelectedRecipeDetail,
     pantryMatches,
@@ -675,88 +676,165 @@ export const RecipesView: React.FC = () => {
     )}
 
     {/* Confirmation Modal to Add Recipe Ingredients to Pantry */}
-    {recipeToAddIngredientsToPantry && (() => {
-      const missingIngredients = recipeToAddIngredientsToPantry.ingredients.filter(
-        ing => !pantry.some(p => normalizeIngredientName(p.name) === normalizeIngredientName(ing.name))
-      );
-
-      const toAdd = missingIngredients.length > 0
-        ? missingIngredients
-        : recipeToAddIngredientsToPantry.ingredients;
-
-      const handleConfirmAdd = () => {
-        toAdd.forEach(ing => {
-          addPantryItem({
-            name: ing.name,
-            amount: ing.amount,
-            unit: ing.unit,
-            category: ing.category,
-          });
-        });
-
-        showToast(`🥕 ${toAdd.length} ingredientes de "${recipeToAddIngredientsToPantry.name}" agregados a la despensa`, 'success');
-        setRecipeToAddIngredientsToPantry(null);
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
-            <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
-              <Carrot className="w-6 h-6 text-[#39B54A]" />
-            </div>
-            <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-[#263238]">
-                ¿Confirmar ingreso a tu despensa?
-              </h3>
-              <p className="text-xs text-[#263238]/70">
-                {missingIngredients.length > 0
-                  ? `Se registrarán los ${missingIngredients.length} ingredientes faltantes de la receta "${recipeToAddIngredientsToPantry.name}" en tu despensa:`
-                  : `Se registrarán los ${toAdd.length} ingredientes de "${recipeToAddIngredientsToPantry.name}" en tu despensa:`}
-              </p>
-            </div>
-
-            <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
-              {toAdd.map((ing, idx) => (
-                <div key={idx} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2">
-                  <div className="min-w-0 flex items-center gap-1.5 truncate">
-                    <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
-                    <span className="font-semibold text-[#263238] truncate">{ing.name}</span>
-                  </div>
-                  <span className="text-[#39B54A] font-extrabold shrink-0 bg-[#39B54A]/10 px-2 py-0.5 rounded-md">
-                    +{ing.amount} {ing.unit}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
-              <span className="text-base">💡</span>
-              <span>
-                Al estar en la despensa, estos ingredientes se descontarán automáticamente de tu lista de compras.
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setRecipeToAddIngredientsToPantry(null)}
-                className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAdd}
-                className="px-4 py-2.5 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirmar y sumar</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    })()}
+    {recipeToAddIngredientsToPantry && (
+      <AddRecipeToPantryModal
+        recipe={recipeToAddIngredientsToPantry}
+        onClose={() => setRecipeToAddIngredientsToPantry(null)}
+      />
+    )}
   </div>
 );
+};
+
+interface AddRecipeToPantryModalProps {
+  recipe: Recipe;
+  onClose: () => void;
+}
+
+const AddRecipeToPantryModal: React.FC<AddRecipeToPantryModalProps> = ({ recipe, onClose }) => {
+  const { pantry, addPantryItems, getPantryCategoryIcon } = useApp();
+  const missingIngredients = recipe.ingredients.filter(
+    ing => !pantry.some(p => normalizeIngredientName(p.name) === normalizeIngredientName(ing.name))
+  );
+
+  const defaultItems = missingIngredients.length > 0 ? missingIngredients : recipe.ingredients;
+
+  const [selectedMap, setSelectedMap] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    defaultItems.forEach(ing => {
+      map[ing.name] = true;
+    });
+    return map;
+  });
+
+  const selectedCount = defaultItems.filter(ing => selectedMap[ing.name] !== false).length;
+  const allSelected = selectedCount === defaultItems.length;
+
+  const toggleAll = () => {
+    const next: Record<string, boolean> = {};
+    defaultItems.forEach(ing => {
+      next[ing.name] = !allSelected;
+    });
+    setSelectedMap(next);
+  };
+
+  const toggleItem = (name: string) => {
+    setSelectedMap(prev => ({
+      ...prev,
+      [name]: prev[name] === false ? true : false,
+    }));
+  };
+
+  const handleConfirmAdd = () => {
+    const toAdd = defaultItems.filter(ing => selectedMap[ing.name] !== false);
+    if (toAdd.length === 0) {
+      onClose();
+      return;
+    }
+
+    addPantryItems(
+      toAdd.map(ing => ({
+        name: ing.name,
+        amount: ing.amount,
+        unit: ing.unit,
+        category: ing.category,
+      })),
+      `🥕 ${toAdd.length} ${toAdd.length === 1 ? 'ingrediente de' : 'ingredientes de'} "${recipe.name}" agregados a tu despensa`
+    );
+
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#263238]/10 text-[#263238]">
+        <div className="w-12 h-12 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center text-xl mx-auto shadow-xs">
+          <Carrot className="w-6 h-6 text-[#39B54A]" />
+        </div>
+        <div className="text-center space-y-1">
+          <h3 className="text-base font-bold text-[#263238]">
+            ¿Confirmar ingreso a tu despensa?
+          </h3>
+          <p className="text-xs text-[#263238]/70">
+            {missingIngredients.length > 0
+              ? `Elegí qué ingredientes de "${recipe.name}" querés registrar en tu despensa:`
+              : `Registrá los ingredientes de "${recipe.name}" en tu despensa para incrementar existencias:`}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between text-xs px-1">
+          <span className="font-bold text-[#263238]/70">
+            Seleccionados: <strong className="text-[#39B54A]">{selectedCount}</strong> de {defaultItems.length}
+          </span>
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="text-xs font-bold text-[#4D96FF] hover:underline cursor-pointer"
+          >
+            {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+          </button>
+        </div>
+
+        <div className="max-h-52 overflow-y-auto p-3 bg-[#FFFDF7] rounded-2xl border border-[#263238]/10 divide-y divide-[#263238]/8 space-y-1.5">
+          {defaultItems.map((ing, idx) => {
+            const isChecked = selectedMap[ing.name] !== false;
+            return (
+              <label
+                key={idx}
+                className="pt-1.5 first:pt-0 flex items-center justify-between text-xs gap-2 cursor-pointer hover:bg-slate-50/50 p-1 rounded-lg transition-colors"
+              >
+                <div className="min-w-0 flex items-center gap-2 truncate">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleItem(ing.name)}
+                    className="w-4 h-4 rounded text-[#39B54A] focus:ring-[#39B54A] cursor-pointer"
+                  />
+                  <span className="text-base">{getPantryCategoryIcon(ing.category)}</span>
+                  <span className={`font-semibold truncate ${isChecked ? 'text-[#263238]' : 'text-[#263238]/40 line-through'}`}>
+                    {ing.name}
+                  </span>
+                </div>
+                <span className={`font-extrabold shrink-0 px-2 py-0.5 rounded-md ${
+                  isChecked ? 'text-[#39B54A] bg-[#39B54A]/10' : 'text-[#263238]/40 bg-slate-100'
+                }`}>
+                  +{ing.amount} {ing.unit}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[11px] text-emerald-900 leading-snug flex items-center gap-2">
+          <span className="text-base">💡</span>
+          <span>
+            Al estar en la despensa, estos ingredientes se descontarán automáticamente de tu lista de compras.
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl border border-[#263238]/15 text-xs font-semibold hover:bg-slate-50 cursor-pointer text-[#263238]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmAdd}
+            disabled={selectedCount === 0}
+            className={`px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-colors ${
+              selectedCount === 0
+                ? 'bg-slate-300 cursor-not-allowed'
+                : 'bg-[#39B54A] hover:bg-[#329e41] cursor-pointer'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Confirmar y sumar ({selectedCount})</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };

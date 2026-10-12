@@ -53,6 +53,7 @@ interface AppContextType {
   deleteRecipe: (id: string) => void;
   pantry: PantryItem[];
   addPantryItem: (item: Omit<PantryItem, 'id'>) => void;
+  addPantryItems: (items: Array<Omit<PantryItem, 'id'>>, toastMessage?: string) => void;
   updatePantryItem: (id: string, item: Partial<PantryItem>) => void;
   movePantryItemCategory: (id: string, newCategory: ProductCategory) => void;
   deletePantryItem: (id: string) => void;
@@ -178,7 +179,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [pantry, setPantryState] = useState<PantryItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PANTRY);
-      return saved ? JSON.parse(saved) : INITIAL_PANTRY;
+      const list: PantryItem[] = saved ? JSON.parse(saved) : INITIAL_PANTRY;
+      if (!Array.isArray(list)) return INITIAL_PANTRY;
+      const seenIds = new Set<string>();
+      return list.map((item, idx) => {
+        let finalId = item.id;
+        if (!finalId || seenIds.has(finalId)) {
+          finalId = `pantry_item_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 7)}`;
+        }
+        seenIds.add(finalId);
+        return {
+          ...item,
+          id: finalId,
+        };
+      });
     } catch {
       return INITIAL_PANTRY;
     }
@@ -330,7 +344,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [recipes]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PANTRY, JSON.stringify(pantry));
+    const seenIds = new Set<string>();
+    const sanitized = pantry.map((item, idx) => {
+      let finalId = item.id;
+      if (!finalId || seenIds.has(finalId)) {
+        finalId = `pantry_item_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 7)}`;
+      }
+      seenIds.add(finalId);
+      return { ...item, id: finalId };
+    });
+    localStorage.setItem(STORAGE_KEYS.PANTRY, JSON.stringify(sanitized));
   }, [pantry]);
 
   useEffect(() => {
@@ -509,13 +532,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return days;
   };
 
+  const addPantryItems = (itemsData: Array<Omit<PantryItem, 'id'>>, customToastMessage?: string) => {
+    if (!itemsData || itemsData.length === 0) return;
+
+    setPantryState(prev => {
+      const next = [...prev];
+      itemsData.forEach((item, index) => {
+        const normKey = normalizeIngredientName(item.name);
+        const existingIdx = next.findIndex(p => normalizeIngredientName(p.name) === normKey);
+        const amountToAdd = Math.max(0.1, Number(item.amount) || 1);
+
+        if (existingIdx >= 0) {
+          next[existingIdx] = {
+            ...next[existingIdx],
+            amount: Math.round((next[existingIdx].amount + amountToAdd) * 10) / 10,
+            expirationDate: item.expirationDate || next[existingIdx].expirationDate,
+          };
+        } else {
+          next.unshift({
+            ...item,
+            amount: amountToAdd,
+            id: `pantry_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 7)}`,
+          });
+        }
+      });
+      return next;
+    });
+
+    if (customToastMessage) {
+      showToast(customToastMessage, 'success');
+    } else if (itemsData.length === 1) {
+      showToast(`🥕 "${itemsData[0].name}" agregado a tu despensa`, 'success');
+    } else {
+      showToast(`🥕 ${itemsData.length} alimentos agregados a tu despensa`, 'success');
+    }
+  };
+
   const addPantryItem = (itemData: Omit<PantryItem, 'id'>) => {
-    const newItem: PantryItem = {
-      ...itemData,
-      id: `pantry_${Date.now()}`,
-    };
-    setPantryState(prev => [newItem, ...prev]);
-    showToast(`🥕 ${newItem.name} agregado a la despensa`, 'success');
+    addPantryItems([itemData]);
   };
 
   const updatePantryItem = (id: string, updates: Partial<PantryItem>) => {
@@ -971,6 +1025,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteRecipe,
         pantry,
         addPantryItem,
+        addPantryItems,
         updatePantryItem,
         deletePantryItem,
         clearEntirePantry,

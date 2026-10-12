@@ -218,9 +218,9 @@ export const HomeView: React.FC = () => {
 
             {/* Quick list of ingredients */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {pantry.slice(0, 6).map(p => (
+              {pantry.slice(0, 6).map((p, pIdx) => (
                 <div
-                  key={p.id}
+                  key={`${p.id}_${pIdx}`}
                   className="p-2 rounded-xl bg-[#FFFDF7] border border-[#263238]/8 flex items-center justify-between"
                 >
                   <span className="font-semibold text-[#263238] truncate">{p.name}</span>
