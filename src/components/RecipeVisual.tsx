@@ -157,9 +157,9 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
         {/* Central Embossed Gastronomic Medallion */}
         <div
-          className={`relative z-10 ${iconBoxSize} rounded-2xl bg-white/85 backdrop-blur-xs border border-white/95 shadow-sm shadow-black/5 flex items-center justify-center transform group-hover:scale-105 group-hover:-rotate-1 transition-transform duration-300`}
+          className={`relative z-10 ${iconBoxSize} rounded-2xl bg-white/85 backdrop-blur-xs border border-white/95 shadow-sm shadow-black/5 flex items-center justify-center transform group-hover:scale-105 group-hover:-rotate-1 transition-transform duration-300 overflow-hidden px-1`}
         >
-          <span className="filter drop-shadow-xs leading-none">
+          <span className="filter drop-shadow-xs leading-none truncate max-w-full text-center select-none">
             {displayEmoji}
           </span>
         </div>
@@ -178,8 +178,8 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
       {/* Category Pill Tag */}
       {showCategoryBadge && category && (
-        <div className="absolute bottom-2.5 left-3 z-30 pointer-events-none">
-          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-lg bg-[#263238]/75 text-white backdrop-blur-sm tracking-wide shadow-xs">
+        <div className="absolute bottom-2.5 left-3 z-30 pointer-events-none max-w-[75%]">
+          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-lg bg-[#263238]/75 text-white backdrop-blur-sm tracking-wide shadow-xs truncate block">
             {category}
           </span>
         </div>

@@ -236,8 +236,8 @@ export const RecipeDetailModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#263238]/10 text-[#263238]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl border border-[#263238]/10 text-[#263238]">
         {/* Hero visual banner with pastel illustration */}
         <div className="relative overflow-hidden rounded-t-3xl">
           <RecipeVisual
@@ -365,7 +365,7 @@ export const RecipeDetailModal: React.FC = () => {
               </button>
               <span className="text-[11px] font-semibold text-white/80">· {recipe.diet}</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight mt-1 break-words">
               {recipe.emoji} {recipe.name}
             </h2>
           </div>

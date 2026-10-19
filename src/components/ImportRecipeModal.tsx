@@ -514,43 +514,46 @@ Preparación:
                   </button>
                 </div>
 
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-48 overflow-y-auto overflow-x-hidden pr-1">
                   {draftRecipe.ingredients.map((ing, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 p-2 bg-[#FFFDF7] border border-[#263238]/10 rounded-xl"
+                      className="bg-[#FFFDF7] border border-[#263238]/10 rounded-xl p-2.5 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2 shadow-2xs"
                     >
                       <input
                         type="text"
                         placeholder="Ingrediente..."
                         value={ing.name}
                         onChange={e => handleUpdateIngredient(idx, 'name', e.target.value)}
-                        className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none"
+                        className="w-full sm:flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none"
                       />
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="Cant."
-                        value={ing.amount}
-                        onChange={e => handleUpdateIngredient(idx, 'amount', e.target.value)}
-                        className="w-16 px-2 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Unidad (g, kg...)"
-                        value={ing.unit}
-                        onChange={e => handleUpdateIngredient(idx, 'unit', e.target.value)}
-                        className="w-20 px-2 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none"
-                      />
-                      {draftRecipe.ingredients.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIngredient(idx)}
-                          className="p-1.5 text-[#263238]/40 hover:text-red-500 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="Cant."
+                          value={ing.amount}
+                          onChange={e => handleUpdateIngredient(idx, 'amount', e.target.value)}
+                          className="w-16 px-2 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none shrink-0"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Unidad (g, kg...)"
+                          value={ing.unit}
+                          onChange={e => handleUpdateIngredient(idx, 'unit', e.target.value)}
+                          className="flex-1 sm:w-24 px-2 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none shrink-0"
+                        />
+                        {draftRecipe.ingredients.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveIngredient(idx)}
+                            className="p-1.5 text-[#263238]/40 hover:text-red-500 rounded-lg transition-colors cursor-pointer shrink-0"
+                            title="Eliminar ingrediente"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

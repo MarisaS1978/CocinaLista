@@ -162,33 +162,33 @@ export const EditRecipeModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-[#263238]/10 text-[#263238]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto overflow-x-hidden shadow-2xl border border-[#263238]/10 text-[#263238]">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-[#263238]/8 flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center">
+        <div className="p-4 sm:p-6 pb-4 border-b border-[#263238]/8 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-[#39B54A]/15 text-[#39B54A] flex items-center justify-center shrink-0">
               <Edit3 className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-[#263238]">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#263238] truncate">
                 Editar receta
               </h2>
-              <p className="text-xs text-[#263238]/70 mt-0.5">
+              <p className="text-xs text-[#263238]/70 mt-0.5 line-clamp-2">
                 Modificá cantidades, ingredientes o tiempos. La lista de compras se recalcula al instante.
               </p>
             </div>
           </div>
           <button
             onClick={() => setEditingRecipe(null)}
-            className="p-1.5 rounded-xl text-[#263238]/50 hover:text-[#263238] hover:bg-black/5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-[#263238]/50 hover:text-[#263238] hover:bg-black/5 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-hidden">
           {/* Nombre de la receta */}
           <div>
             <label className="text-xs font-bold text-[#263238] block mb-1.5">
@@ -440,11 +440,11 @@ export const EditRecipeModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-56 overflow-y-auto overflow-x-hidden pr-1">
               {ingredients.map((ing, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2 bg-white p-2 rounded-xl border border-[#263238]/10"
+                  className="bg-white p-2.5 rounded-xl border border-[#263238]/10 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2 shadow-2xs"
                 >
                   <input
                     type="text"
@@ -452,49 +452,52 @@ export const EditRecipeModal: React.FC = () => {
                     placeholder="Ingrediente (ej: Papa)"
                     value={ing.name}
                     onChange={e => handleUpdateIngredient(idx, 'name', e.target.value)}
-                    className="flex-1 min-w-[120px] px-2.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
+                    className="w-full sm:flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
                   />
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.1"
-                    required
-                    placeholder="Cant."
-                    value={ing.amount}
-                    onChange={e => handleUpdateIngredient(idx, 'amount', e.target.value)}
-                    className="w-18 px-2 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
-                  />
-                  <select
-                    value={ing.unit}
-                    onChange={e => handleUpdateIngredient(idx, 'unit', e.target.value)}
-                    className="w-24 px-1.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none"
-                  >
-                    {commonUnits.map(u => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={ing.category}
-                    onChange={e => handleUpdateIngredient(idx, 'category', e.target.value)}
-                    className="w-28 px-1.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none hidden sm:block"
-                  >
-                    {productCategories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  {ingredients.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveIngredient(idx)}
-                      className="p-1.5 text-[#263238]/40 hover:text-[#FF5C5C] hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.1"
+                      required
+                      placeholder="Cant."
+                      value={ing.amount}
+                      onChange={e => handleUpdateIngredient(idx, 'amount', e.target.value)}
+                      className="w-16 sm:w-16 px-2 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A] shrink-0"
+                    />
+                    <select
+                      value={ing.unit}
+                      onChange={e => handleUpdateIngredient(idx, 'unit', e.target.value)}
+                      className="flex-1 sm:w-22 px-1.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none shrink-0"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                      {commonUnits.map(u => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={ing.category}
+                      onChange={e => handleUpdateIngredient(idx, 'category', e.target.value)}
+                      className="flex-1 sm:w-28 px-1.5 py-1.5 text-xs bg-[#FFFDF7] border border-[#263238]/15 rounded-lg focus:outline-none shrink-0"
+                    >
+                      {productCategories.map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    {ingredients.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveIngredient(idx)}
+                        className="p-1.5 text-[#263238]/40 hover:text-[#FF5C5C] hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                        title="Eliminar ingrediente"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -515,9 +518,9 @@ export const EditRecipeModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-40 overflow-y-auto overflow-x-hidden pr-1">
               {instructions.map((step, idx) => (
-                <div key={idx} className="flex items-center gap-2">
+                <div key={idx} className="flex items-center gap-2 min-w-0">
                   <span className="w-5 h-5 rounded-full bg-[#39B54A]/20 text-[#2b8838] font-bold text-[11px] flex items-center justify-center shrink-0">
                     {idx + 1}
                   </span>
@@ -526,7 +529,7 @@ export const EditRecipeModal: React.FC = () => {
                     placeholder={`Paso ${idx + 1}...`}
                     value={step}
                     onChange={e => handleUpdateInstruction(idx, e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
+                    className="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-white border border-[#263238]/15 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#39B54A]"
                   />
                   {instructions.length > 1 && (
                     <button

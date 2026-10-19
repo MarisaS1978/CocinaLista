@@ -112,7 +112,7 @@ export const HomeView: React.FC = () => {
                 <div
                   key={d.id}
                   onClick={() => setActiveTab('menu')}
-                  className="p-3 rounded-2xl border border-[#263238]/8 bg-[#FFFDF7] hover:border-[#39B54A]/40 transition-all flex items-center justify-between cursor-pointer group"
+                  className="p-3 rounded-2xl border border-[#263238]/8 bg-[#FFFDF7] hover:border-[#39B54A]/40 transition-all flex items-center justify-between cursor-pointer group min-w-0 overflow-hidden"
                 >
                   <div className="w-20 font-bold text-xs text-[#263238]/80 group-hover:text-[#39B54A]">
                     {d.name}

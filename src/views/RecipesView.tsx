@@ -559,49 +559,49 @@ export const RecipesView: React.FC = () => {
               </div>
 
               {/* Card body */}
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-base text-[#263238] group-hover:text-[#39B54A] transition-colors leading-snug">
+              <div className="p-4 flex-1 flex flex-col justify-between min-w-0 overflow-hidden">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base text-[#263238] group-hover:text-[#39B54A] transition-colors leading-snug break-words line-clamp-2">
                     {recipe.name}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 max-w-full">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setRecipeToChangeCategory(recipe);
                       }}
-                      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFFDF7] hover:bg-[#39B54A]/10 text-[#263238]/80 hover:text-[#1e6328] border border-[#263238]/15 hover:border-[#39B54A]/40 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFFDF7] hover:bg-[#39B54A]/10 text-[#263238]/80 hover:text-[#1e6328] border border-[#263238]/15 hover:border-[#39B54A]/40 transition-colors cursor-pointer max-w-full truncate"
                       title="Tocar para cambiar la opción de filtrado de esta receta"
                     >
-                      <span>{getCategoryIcon(recipe.category)}</span>
-                      <span>{recipe.category}</span>
+                      <span className="shrink-0">{getCategoryIcon(recipe.category)}</span>
+                      <span className="truncate">{recipe.category}</span>
                     </button>
 
                     {isCustom && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#4D96FF]/15 text-[#2563EB] border border-[#4D96FF]/30">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#4D96FF]/15 text-[#2563EB] border border-[#4D96FF]/30 shrink-0">
                         Creada por vos
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-[#263238]/60 mt-1.5">
-                    <span className="flex items-center gap-1 font-medium">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#263238]/60 mt-1.5">
+                    <span className="flex items-center gap-1 font-medium shrink-0">
                       <Clock className="w-3.5 h-3.5 text-[#FF8A3D]" />
                       {recipe.timeMin} min
                     </span>
                     <span>·</span>
-                    <span className="flex items-center gap-1 font-medium">
+                    <span className="flex items-center gap-1 font-medium shrink-0">
                       <Users className="w-3.5 h-3.5 text-[#4D96FF]" />
                       {recipe.servings} porc.
                     </span>
                     <span>·</span>
-                    <span className="font-medium text-[#263238]/70">Dificultad: {recipe.difficulty}</span>
+                    <span className="font-medium text-[#263238]/70 truncate">Dificultad: {recipe.difficulty}</span>
                   </div>
 
                   {/* Main ingredients summary */}
-                  <p className="text-xs text-[#263238]/70 mt-2.5 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[#263238]/70 mt-2.5 line-clamp-2 leading-relaxed break-words">
                     <strong className="text-[#263238] font-semibold">Ingredientes: </strong>
                     {recipe.ingredients.map(i => i.name).slice(0, 4).join(', ')}
                     {recipe.ingredients.length > 4 ? '...' : ''}
@@ -614,19 +614,19 @@ export const RecipesView: React.FC = () => {
                     type="button"
                     onClick={e => handleQuickAddToShopping(e, recipe)}
                     title="Agregar ingredientes faltantes a compras"
-                    className="flex-1 py-1.5 px-2 rounded-xl border border-[#FF8A3D]/40 text-[#FF8A3D] hover:bg-[#FF8A3D]/10 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    className="flex-1 py-1.5 px-2 rounded-xl border border-[#FF8A3D]/40 text-[#FF8A3D] hover:bg-[#FF8A3D]/10 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer min-w-0"
                   >
-                    <ShoppingCart className="w-3.5 h-3.5" />
-                    <span>A compras</span>
+                    <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">A compras</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setSelectedRecipeDetail(recipe)}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                    className="flex-1 py-1.5 px-2 rounded-xl bg-[#39B54A] hover:bg-[#329e41] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer min-w-0"
                   >
-                    <CalendarPlus className="w-3.5 h-3.5" />
-                    <span>Al menú</span>
+                    <CalendarPlus className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Al menú</span>
                   </button>
                 </div>
               </div>
