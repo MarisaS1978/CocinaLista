@@ -127,6 +127,9 @@ interface AppContextType {
   dismissSharedMenu: () => void;
   toast: ToastState | null;
   showToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
+  // Security & Compliance (SOC 2 & ISO/IEC 27001)
+  isSecurityModalOpen: boolean;
+  setIsSecurityModalOpen: (open: boolean) => void;
   // Computed helpers
   pantryMatches: ReturnType<typeof getCookWithPantryMatches>;
   pendingShoppingCount: number;
@@ -285,6 +288,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [customRecipeCategories]);
   const [isShareMenuModalOpen, setIsShareMenuModalOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [sharedMenuIncoming, setSharedMenuIncoming] = useState<WeeklyMenu | null>(null);
 
   // Check URL query on initial load for incoming shared weekly menu
@@ -1092,6 +1096,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         getRecipeMenuUsage,
         isShareMenuModalOpen,
         setIsShareMenuModalOpen,
+        isSecurityModalOpen,
+        setIsSecurityModalOpen,
         sharedMenuIncoming,
         applySharedMenu,
         dismissSharedMenu,

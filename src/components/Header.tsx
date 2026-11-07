@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ActiveTab } from '../types';
-import { Sparkles, Carrot } from 'lucide-react';
+import { Sparkles, Carrot, ShieldCheck } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
 export const Header: React.FC = () => {
@@ -10,6 +10,7 @@ export const Header: React.FC = () => {
     setActiveTab,
     setIsSmartMenuModalOpen,
     setIsCookWithPantryModalOpen,
+    setIsSecurityModalOpen,
     pendingShoppingCount,
   } = useApp();
 
@@ -78,6 +79,21 @@ export const Header: React.FC = () => {
         {/* Zone 3: Primary Action CTAs & PWA Install */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <PWAInstallButton compact={true} />
+
+          {/* SOC 2 & ISO 27001 Security Center button */}
+          <button
+            onClick={() => setIsSecurityModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-bold text-emerald-900 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl transition-all cursor-pointer shadow-2xs group"
+            title="Centro de Seguridad y Cumplimiento: SOC 2 Type II e ISO/IEC 27001:2022"
+          >
+            <ShieldCheck className="w-4 h-4 text-[#39B54A] group-hover:scale-110 transition-transform" />
+            <span className="hidden lg:inline text-[11px] font-extrabold tracking-tight">
+              SOC 2 · ISO 27001
+            </span>
+            <span className="lg:hidden text-[11px] font-extrabold tracking-tight">
+              Seguridad
+            </span>
+          </button>
 
           <button
             onClick={() => setIsCookWithPantryModalOpen(true)}
